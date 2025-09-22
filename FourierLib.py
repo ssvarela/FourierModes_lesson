@@ -1,3 +1,5 @@
+from astropy.io import fits
+import matplotlib.pyplot as plt
 import numpy as np
 
 class Asymmetry:
@@ -254,3 +256,64 @@ class Asymmetry:
             maps2D[m] = Wc_interp * np.cos(m * Thxy) + Ws_interp * np.sin(m * Thxy)
 
         return maps2D, xi, yi
+    
+
+def show_rgb(data):
+    """
+    Display an RGB image from a 3-band array.
+
+    Parameters
+    ----------
+    data : ndarray
+        Array with shape (3, N, M) or (N, M, 3).
+    """
+    # Ensure shape is (3, N, M)
+    if data.shape[-1] == 3:
+        data = np.transpose(data, (2, 0, 1))
+    # Normalize each band to [0, 1]
+    def norm(img):
+        img = img - np.nanmin(img)
+        img = img / np.nanmax(img)
+        return img
+    rgb = np.zeros((data.shape[1], data.shape[2], 3))
+    rgb[..., 0] = norm(data[0])  # R
+    rgb[..., 1] = norm(data[1])  # G
+    rgb[..., 2] = norm(data[2])  # B
+    plt.imshow(rgb, origin='lower')
+    plt.axis('off')
+    plt.title('RGB Composite')
+    plt.show()
+
+def Img2Cart(image, x_extent=None, y_extent=None):
+    """
+    Converts a 2D image array to lists of x, y, z, m for each pixel.
+
+    Parameters
+    ----------
+    image : 2D ndarray
+        Input image (e.g., mass or intensity per pixel).
+    x_extent, y_extent : tuple or None
+        (min, max) range for x and y axes. If None, uses pixel indices.
+
+    Returns
+    -------
+    x, y, z, m : 1D arrays
+        Cartesian coordinates and pixel values.
+    """
+    ny, nx = image.shape
+    # Define x and y coordinates
+    if x_extent is None:
+        x = np.arange(nx)
+    else:
+        x = np.linspace(x_extent[0], x_extent[1], nx)
+    if y_extent is None:
+        y = np.arange(ny)
+    else:
+        y = np.linspace(y_extent[0], y_extent[1], ny)
+    X, Y = np.meshgrid(x, y)
+    # Flatten arrays
+    x_flat = X.ravel()
+    y_flat = Y.ravel()
+    z_flat = np.zeros_like(x_flat)
+    m_flat = image.ravel()
+    return x_flat, y_flat, z_flat, m_flat
